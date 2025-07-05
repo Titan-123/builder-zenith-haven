@@ -96,6 +96,94 @@ export default function Index() {
         </div>
       </section>
 
+      {/* Demo Navigation Section */}
+      <section className="py-16 bg-primary/5">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <h2 className="text-2xl lg:text-3xl font-bold text-gray-900 mb-4">
+              Explore All Features
+            </h2>
+            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+              Take a tour of all the pages and features in the JobTracker app
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <Link to="/dashboard">
+              <div className="bg-white rounded-lg p-6 hover:shadow-lg transition-shadow cursor-pointer border">
+                <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-4">
+                  <Search className="w-6 h-6 text-blue-600" />
+                </div>
+                <h3 className="text-lg font-semibold mb-2">Dashboard</h3>
+                <p className="text-gray-600 text-sm">
+                  Browse jobs with filters and search functionality
+                </p>
+              </div>
+            </Link>
+
+            <Link to="/job/1">
+              <div className="bg-white rounded-lg p-6 hover:shadow-lg transition-shadow cursor-pointer border">
+                <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mb-4">
+                  <Target className="w-6 h-6 text-green-600" />
+                </div>
+                <h3 className="text-lg font-semibold mb-2">Job Details</h3>
+                <p className="text-gray-600 text-sm">
+                  View detailed job information and requirements
+                </p>
+              </div>
+            </Link>
+
+            <Link to="/my-applications">
+              <div className="bg-white rounded-lg p-6 hover:shadow-lg transition-shadow cursor-pointer border">
+                <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mb-4">
+                  <Bookmark className="w-6 h-6 text-purple-600" />
+                </div>
+                <h3 className="text-lg font-semibold mb-2">My Applications</h3>
+                <p className="text-gray-600 text-sm">
+                  Track your job applications and their status
+                </p>
+              </div>
+            </Link>
+
+            <Link to="/profile">
+              <div className="bg-white rounded-lg p-6 hover:shadow-lg transition-shadow cursor-pointer border">
+                <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center mb-4">
+                  <TrendingUp className="w-6 h-6 text-orange-600" />
+                </div>
+                <h3 className="text-lg font-semibold mb-2">Profile</h3>
+                <p className="text-gray-600 text-sm">
+                  Manage your account settings and preferences
+                </p>
+              </div>
+            </Link>
+
+            <Link to="/login">
+              <div className="bg-white rounded-lg p-6 hover:shadow-lg transition-shadow cursor-pointer border">
+                <div className="w-12 h-12 bg-indigo-100 rounded-lg flex items-center justify-center mb-4">
+                  <ArrowRight className="w-6 h-6 text-indigo-600" />
+                </div>
+                <h3 className="text-lg font-semibold mb-2">Login Page</h3>
+                <p className="text-gray-600 text-sm">
+                  Complete login form with Google authentication
+                </p>
+              </div>
+            </Link>
+
+            <Link to="/register">
+              <div className="bg-white rounded-lg p-6 hover:shadow-lg transition-shadow cursor-pointer border">
+                <div className="w-12 h-12 bg-teal-100 rounded-lg flex items-center justify-center mb-4">
+                  <ArrowRight className="w-6 h-6 text-teal-600" />
+                </div>
+                <h3 className="text-lg font-semibold mb-2">Register Page</h3>
+                <p className="text-gray-600 text-sm">
+                  Create account form with validation
+                </p>
+              </div>
+            </Link>
+          </div>
+        </div>
+      </section>
+
       {/* Features Section */}
       <section className="py-24 bg-white/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
