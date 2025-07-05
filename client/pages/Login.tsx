@@ -3,13 +3,92 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
+import { useToast } from "@/hooks/use-toast";
 import Navbar from "@/components/Navbar";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Briefcase, Eye, EyeOff } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useAppDispatch, useAppSelector, selectAuth } from "@/lib/store";
+import {
+  loginUser,
+  googleLogin,
+  clearError,
+} from "@/lib/store/slices/authSlice";
 
 export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
+  const [formData, setFormData] = useState({
+    email: "",
+    password: "",
+  });
+
+  const dispatch = useAppDispatch();
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const { isLoading, error, isAuthenticated } = useAppSelector(selectAuth);
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate("/dashboard");
+    }
+  }, [isAuthenticated, navigate]);
+
+  // Show error toast
+  useEffect(() => {
+    if (error) {
+      toast({
+        title: "Login Failed",
+        description: error,
+        variant: "destructive",
+      });
+      dispatch(clearError());
+    }
+  }, [error, toast, dispatch]);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData({
+      ...formData,
+      [e.target.id]: e.target.value,
+    });
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.email || !formData.password) {
+      toast({
+        title: "Validation Error",
+        description: "Please fill in all fields",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      await dispatch(loginUser(formData)).unwrap();
+      toast({
+        title: "Success",
+        description: "Logged in successfully!",
+      });
+      navigate("/dashboard");
+    } catch (error) {
+      // Error handled by useEffect
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    try {
+      // In a real app, this would use Google OAuth
+      await dispatch(googleLogin("mock_google_token")).unwrap();
+      toast({
+        title: "Success",
+        description: "Logged in with Google successfully!",
+      });
+      navigate("/dashboard");
+    } catch (error) {
+      // Error handled by useEffect
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-white via-blue-50/30 to-cyan-50/30">
@@ -36,7 +115,7 @@ export default function Login() {
               <CardTitle className="text-center text-xl">Sign in</CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
-              <form className="space-y-4">
+              <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="email">Email</Label>
                   <Input
@@ -45,6 +124,9 @@ export default function Login() {
                     placeholder="Enter your email"
                     required
                     className="h-11"
+                    value={formData.email}
+                    onChange={handleInputChange}
+                    disabled={isLoading}
                   />
                 </div>
 
@@ -57,6 +139,9 @@ export default function Login() {
                       placeholder="Enter your password"
                       required
                       className="h-11 pr-10"
+                      value={formData.password}
+                      onChange={handleInputChange}
+                      disabled={isLoading}
                     />
                     <button
                       type="button"
@@ -83,8 +168,12 @@ export default function Login() {
                   </div>
                 </div>
 
-                <Button type="submit" className="w-full h-11 mt-6">
-                  Sign In
+                <Button
+                  type="submit"
+                  className="w-full h-11 mt-6"
+                  disabled={isLoading}
+                >
+                  {isLoading ? "Signing In..." : "Sign In"}
                 </Button>
               </form>
 
@@ -101,7 +190,8 @@ export default function Login() {
                 variant="outline"
                 type="button"
                 className="w-full h-11"
-                onClick={() => console.log("Google login")}
+                onClick={handleGoogleLogin}
+                disabled={isLoading}
               >
                 <svg className="w-4 h-4 mr-2" viewBox="0 0 24 24">
                   <path
