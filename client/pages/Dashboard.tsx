@@ -11,21 +11,39 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { MapPin, DollarSign, Bookmark, Search, Filter } from "lucide-react";
+import { MapPin, DollarSign, Bookmark, Search, Filter, X } from "lucide-react";
 import { Link } from "react-router-dom";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useAppDispatch, useAppSelector, selectJobs } from "@/lib/store";
 import {
   searchJobs,
   setFilters,
   fetchJobPortals,
+  clearFilters,
 } from "@/lib/store/slices/jobsSlice";
 import { createApplication } from "@/lib/store/slices/applicationsSlice";
+
+// Debounce hook
+function useDebounce(value: string, delay: number) {
+  const [debouncedValue, setDebouncedValue] = useState(value);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [value, delay]);
+
+  return debouncedValue;
+}
 
 export default function Dashboard() {
   const dispatch = useAppDispatch();
   const { toast } = useToast();
-  const { jobs, isLoading, error, total, filters, portals } =
+  const { jobs, isLoading, error, total, filters, portals, page, totalPages } =
     useAppSelector(selectJobs);
 
   const [searchForm, setSearchForm] = useState({
@@ -41,11 +59,26 @@ export default function Dashboard() {
     portal: "",
   });
 
+  const [sortBy, setSortBy] = useState("postedDate");
+  const [sortOrder, setSortOrder] = useState("desc");
+  const [currentPage, setCurrentPage] = useState(1);
+
+  // Debounce search inputs for better performance
+  const debouncedSearch = useDebounce(searchForm.search, 500);
+  const debouncedLocationSearch = useDebounce(searchForm.locationSearch, 500);
+
   // Load initial data
   useEffect(() => {
     dispatch(searchJobs({}));
     dispatch(fetchJobPortals());
   }, [dispatch]);
+
+  // Auto-search when debounced values change
+  useEffect(() => {
+    if (debouncedSearch !== "" || debouncedLocationSearch !== "") {
+      handleSearch();
+    }
+  }, [debouncedSearch, debouncedLocationSearch]);
 
   // Show error toast
   useEffect(() => {
@@ -58,9 +91,10 @@ export default function Dashboard() {
     }
   }, [error, toast]);
 
-  const handleSearch = () => {
+  const handleSearch = useCallback(() => {
     const searchFilters = {
-      ...searchForm,
+      search: debouncedSearch,
+      locationSearch: debouncedLocationSearch,
       ...currentFilters,
     };
 
@@ -69,12 +103,142 @@ export default function Dashboard() {
       Object.entries(searchFilters).filter(([_, value]) => value !== ""),
     );
 
+    const pagination = {
+      page: currentPage,
+      limit: 12,
+      sortBy,
+      sortOrder: sortOrder as "asc" | "desc",
+    };
+
     dispatch(setFilters(cleanFilters));
-    dispatch(searchJobs({ filters: cleanFilters }));
+    dispatch(searchJobs({ filters: cleanFilters, pagination }));
+  }, [
+    debouncedSearch,
+    debouncedLocationSearch,
+    currentFilters,
+    currentPage,
+    sortBy,
+    sortOrder,
+    dispatch,
+  ]);
+
+  const handleFilterChange = (key: string, value: string) => {
+    setCurrentFilters((prev) => {
+      const newFilters = {
+        ...prev,
+        [key]: value,
+      };
+
+      // Reset to first page when filters change
+      setCurrentPage(1);
+
+      // Auto-apply filters
+      setTimeout(() => {
+        const searchFilters = {
+          search: debouncedSearch,
+          locationSearch: debouncedLocationSearch,
+          ...newFilters,
+        };
+
+        const cleanFilters = Object.fromEntries(
+          Object.entries(searchFilters).filter(([_, v]) => v !== ""),
+        );
+
+        const pagination = {
+          page: 1,
+          limit: 12,
+          sortBy,
+          sortOrder: sortOrder as "asc" | "desc",
+        };
+
+        dispatch(setFilters(cleanFilters));
+        dispatch(searchJobs({ filters: cleanFilters, pagination }));
+      }, 100);
+
+      return newFilters;
+    });
   };
 
-  const handleApplyFilters = () => {
-    handleSearch();
+  const handleSearchInputChange = (key: string, value: string) => {
+    setSearchForm((prev) => ({
+      ...prev,
+      [key]: value,
+    }));
+    // Reset to first page when search changes
+    setCurrentPage(1);
+  };
+
+  const handleSortChange = (value: string) => {
+    let newSortBy = "postedDate";
+    let newSortOrder = "desc";
+
+    switch (value) {
+      case "newest":
+        newSortBy = "postedDate";
+        newSortOrder = "desc";
+        break;
+      case "oldest":
+        newSortBy = "postedDate";
+        newSortOrder = "asc";
+        break;
+      case "salary-high":
+        newSortBy = "salary";
+        newSortOrder = "desc";
+        break;
+      case "salary-low":
+        newSortBy = "salary";
+        newSortOrder = "asc";
+        break;
+    }
+
+    setSortBy(newSortBy);
+    setSortOrder(newSortOrder);
+    setCurrentPage(1);
+
+    // Apply new sorting
+    const searchFilters = {
+      search: debouncedSearch,
+      locationSearch: debouncedLocationSearch,
+      ...currentFilters,
+    };
+
+    const cleanFilters = Object.fromEntries(
+      Object.entries(searchFilters).filter(([_, value]) => value !== ""),
+    );
+
+    const pagination = {
+      page: 1,
+      limit: 12,
+      sortBy: newSortBy,
+      sortOrder: newSortOrder as "asc" | "desc",
+    };
+
+    dispatch(searchJobs({ filters: cleanFilters, pagination }));
+  };
+
+  const handleClearAllFilters = () => {
+    setSearchForm({
+      search: "",
+      locationSearch: "",
+    });
+    setCurrentFilters({
+      role: "",
+      location: "",
+      experience: "",
+      salaryRange: "",
+      portal: "",
+    });
+    setCurrentPage(1);
+    setSortBy("postedDate");
+    setSortOrder("desc");
+
+    dispatch(clearFilters());
+    dispatch(searchJobs({}));
+
+    toast({
+      title: "Filters Cleared",
+      description: "All filters have been reset",
+    });
   };
 
   const handleSaveJob = async (jobId: string) => {
@@ -93,19 +257,34 @@ export default function Dashboard() {
     }
   };
 
-  const handleFilterChange = (key: string, value: string) => {
-    setCurrentFilters((prev) => ({
-      ...prev,
-      [key]: value,
-    }));
+  const handlePageChange = (newPage: number) => {
+    setCurrentPage(newPage);
+
+    const searchFilters = {
+      search: debouncedSearch,
+      locationSearch: debouncedLocationSearch,
+      ...currentFilters,
+    };
+
+    const cleanFilters = Object.fromEntries(
+      Object.entries(searchFilters).filter(([_, value]) => value !== ""),
+    );
+
+    const pagination = {
+      page: newPage,
+      limit: 12,
+      sortBy,
+      sortOrder: sortOrder as "asc" | "desc",
+    };
+
+    dispatch(searchJobs({ filters: cleanFilters, pagination }));
   };
 
-  const handleSearchInputChange = (key: string, value: string) => {
-    setSearchForm((prev) => ({
-      ...prev,
-      [key]: value,
-    }));
-  };
+  // Count active filters
+  const activeFiltersCount =
+    Object.values(currentFilters).filter((value) => value !== "").length +
+    (searchForm.search ? 1 : 0) +
+    (searchForm.locationSearch ? 1 : 0);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -115,11 +294,27 @@ export default function Dashboard() {
         {/* Left Sidebar */}
         <aside className="w-80 bg-white border-r border-gray-200 min-h-screen p-6">
           <div className="space-y-6">
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-gray-900 flex items-center">
                 <Filter className="w-5 h-5 mr-2" />
                 Filters
+                {activeFiltersCount > 0 && (
+                  <Badge variant="secondary" className="ml-2 text-xs">
+                    {activeFiltersCount}
+                  </Badge>
+                )}
               </h3>
+              {activeFiltersCount > 0 && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleClearAllFilters}
+                  className="text-xs"
+                >
+                  <X className="w-3 h-3 mr-1" />
+                  Clear
+                </Button>
+              )}
             </div>
 
             <div className="space-y-4">
@@ -128,12 +323,14 @@ export default function Dashboard() {
                   Role
                 </label>
                 <Select
+                  value={currentFilters.role}
                   onValueChange={(value) => handleFilterChange("role", value)}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select role" />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="">All Roles</SelectItem>
                     <SelectItem value="frontend">Frontend Developer</SelectItem>
                     <SelectItem value="backend">Backend Developer</SelectItem>
                     <SelectItem value="fullstack">
@@ -152,6 +349,7 @@ export default function Dashboard() {
                   Location
                 </label>
                 <Select
+                  value={currentFilters.location}
                   onValueChange={(value) =>
                     handleFilterChange("location", value)
                   }
@@ -160,6 +358,7 @@ export default function Dashboard() {
                     <SelectValue placeholder="Select location" />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="">All Locations</SelectItem>
                     <SelectItem value="San Francisco, CA">
                       San Francisco, CA
                     </SelectItem>
@@ -178,6 +377,7 @@ export default function Dashboard() {
                   Experience
                 </label>
                 <Select
+                  value={currentFilters.experience}
                   onValueChange={(value) =>
                     handleFilterChange("experience", value)
                   }
@@ -186,6 +386,7 @@ export default function Dashboard() {
                     <SelectValue placeholder="Select experience" />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="">All Levels</SelectItem>
                     <SelectItem value="entry">
                       Entry Level (0-2 years)
                     </SelectItem>
@@ -205,6 +406,7 @@ export default function Dashboard() {
                   Salary Range
                 </label>
                 <Select
+                  value={currentFilters.salaryRange}
                   onValueChange={(value) =>
                     handleFilterChange("salaryRange", value)
                   }
@@ -213,6 +415,7 @@ export default function Dashboard() {
                     <SelectValue placeholder="Select salary range" />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="">All Salaries</SelectItem>
                     <SelectItem value="50-70">$50k - $70k</SelectItem>
                     <SelectItem value="70-90">$70k - $90k</SelectItem>
                     <SelectItem value="90-120">$90k - $120k</SelectItem>
@@ -227,12 +430,14 @@ export default function Dashboard() {
                   Portal
                 </label>
                 <Select
+                  value={currentFilters.portal}
                   onValueChange={(value) => handleFilterChange("portal", value)}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select portal" />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="">All Portals</SelectItem>
                     {portals.map((portal) => (
                       <SelectItem key={portal} value={portal}>
                         {portal}
@@ -242,13 +447,36 @@ export default function Dashboard() {
                 </Select>
               </div>
 
-              <Button
-                className="w-full mt-6"
-                onClick={handleApplyFilters}
-                disabled={isLoading}
-              >
-                {isLoading ? "Searching..." : "Apply Filters"}
-              </Button>
+              {/* Active Filters Display */}
+              {activeFiltersCount > 0 && (
+                <div className="pt-4 border-t">
+                  <p className="text-xs text-gray-500 mb-2">Active Filters:</p>
+                  <div className="flex flex-wrap gap-1">
+                    {searchForm.search && (
+                      <Badge variant="secondary" className="text-xs">
+                        Search: {searchForm.search}
+                      </Badge>
+                    )}
+                    {searchForm.locationSearch && (
+                      <Badge variant="secondary" className="text-xs">
+                        Location: {searchForm.locationSearch}
+                      </Badge>
+                    )}
+                    {Object.entries(currentFilters).map(
+                      ([key, value]) =>
+                        value && (
+                          <Badge
+                            key={key}
+                            variant="secondary"
+                            className="text-xs"
+                          >
+                            {key}: {value}
+                          </Badge>
+                        ),
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </aside>
@@ -262,52 +490,109 @@ export default function Dashboard() {
                 <div className="flex-1 relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                   <Input
-                    placeholder="Search job titles..."
+                    placeholder="Search job titles, companies... (auto-search enabled)"
                     className="pl-10 h-12"
                     value={searchForm.search}
                     onChange={(e) =>
                       handleSearchInputChange("search", e.target.value)
                     }
                   />
+                  {searchForm.search && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="absolute right-2 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0"
+                      onClick={() => handleSearchInputChange("search", "")}
+                    >
+                      <X className="w-3 h-3" />
+                    </Button>
+                  )}
                 </div>
                 <div className="flex-1 relative">
                   <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                   <Input
-                    placeholder="Search locations..."
+                    placeholder="Search locations... (auto-search enabled)"
                     className="pl-10 h-12"
                     value={searchForm.locationSearch}
                     onChange={(e) =>
                       handleSearchInputChange("locationSearch", e.target.value)
                     }
                   />
+                  {searchForm.locationSearch && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="absolute right-2 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0"
+                      onClick={() =>
+                        handleSearchInputChange("locationSearch", "")
+                      }
+                    >
+                      <X className="w-3 h-3" />
+                    </Button>
+                  )}
                 </div>
-                <Button
-                  size="lg"
-                  className="px-8"
-                  onClick={handleSearch}
-                  disabled={isLoading}
-                >
-                  {isLoading ? "Searching..." : "Search Jobs"}
-                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    size="lg"
+                    className="px-6"
+                    onClick={handleSearch}
+                    disabled={isLoading}
+                  >
+                    {isLoading ? "Searching..." : "Search"}
+                  </Button>
+                  {activeFiltersCount > 0 && (
+                    <Button
+                      variant="outline"
+                      size="lg"
+                      onClick={handleClearAllFilters}
+                      className="px-4"
+                    >
+                      <X className="w-4 h-4 mr-1" />
+                      Clear
+                    </Button>
+                  )}
+                </div>
               </div>
             </div>
 
             {/* Results Header */}
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-bold text-gray-900">
-                Found {total} Jobs
-              </h2>
-              <Select defaultValue="newest">
-                <SelectTrigger className="w-48">
-                  <SelectValue placeholder="Sort by" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="newest">Newest First</SelectItem>
-                  <SelectItem value="oldest">Oldest First</SelectItem>
-                  <SelectItem value="salary-high">Highest Salary</SelectItem>
-                  <SelectItem value="salary-low">Lowest Salary</SelectItem>
-                </SelectContent>
-              </Select>
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900">
+                  Found {total} Jobs
+                </h2>
+                {activeFiltersCount > 0 && (
+                  <p className="text-sm text-gray-600 mt-1">
+                    {activeFiltersCount} filter
+                    {activeFiltersCount > 1 ? "s" : ""} applied
+                  </p>
+                )}
+              </div>
+              <div className="flex items-center gap-4">
+                <Select
+                  value={`${sortBy}-${sortOrder}`}
+                  onValueChange={handleSortChange}
+                >
+                  <SelectTrigger className="w-48">
+                    <SelectValue placeholder="Sort by" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="postedDate-desc">
+                      Newest First
+                    </SelectItem>
+                    <SelectItem value="postedDate-asc">Oldest First</SelectItem>
+                    <SelectItem value="salary-desc">Highest Salary</SelectItem>
+                    <SelectItem value="salary-asc">Lowest Salary</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                {/* Pagination Info */}
+                {totalPages > 1 && (
+                  <div className="text-sm text-gray-600">
+                    Page {page} of {totalPages}
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Loading State */}
@@ -380,30 +665,68 @@ export default function Dashboard() {
               </div>
             )}
 
+            {/* Pagination */}
+            {!isLoading && jobs.length > 0 && totalPages > 1 && (
+              <div className="flex justify-center items-center space-x-4 mt-8">
+                <Button
+                  variant="outline"
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  disabled={currentPage <= 1}
+                >
+                  Previous
+                </Button>
+
+                <div className="flex space-x-2">
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    let pageNum;
+                    if (totalPages <= 5) {
+                      pageNum = i + 1;
+                    } else if (currentPage <= 3) {
+                      pageNum = i + 1;
+                    } else if (currentPage >= totalPages - 2) {
+                      pageNum = totalPages - 4 + i;
+                    } else {
+                      pageNum = currentPage - 2 + i;
+                    }
+
+                    return (
+                      <Button
+                        key={pageNum}
+                        variant={
+                          currentPage === pageNum ? "default" : "outline"
+                        }
+                        size="sm"
+                        onClick={() => handlePageChange(pageNum)}
+                      >
+                        {pageNum}
+                      </Button>
+                    );
+                  })}
+                </div>
+
+                <Button
+                  variant="outline"
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  disabled={currentPage >= totalPages}
+                >
+                  Next
+                </Button>
+              </div>
+            )}
+
             {/* No Results */}
             {!isLoading && jobs.length === 0 && (
               <div className="text-center py-12">
                 <div className="text-gray-500 mb-4">
-                  No jobs found matching your criteria
+                  {activeFiltersCount > 0
+                    ? "No jobs found matching your criteria"
+                    : "No jobs available at the moment"}
                 </div>
-                <Button
-                  onClick={() => {
-                    setCurrentFilters({
-                      role: "",
-                      location: "",
-                      experience: "",
-                      salaryRange: "",
-                      portal: "",
-                    });
-                    setSearchForm({
-                      search: "",
-                      locationSearch: "",
-                    });
-                    dispatch(searchJobs({}));
-                  }}
-                >
-                  Clear Filters
-                </Button>
+                {activeFiltersCount > 0 && (
+                  <Button onClick={handleClearAllFilters}>
+                    Clear All Filters
+                  </Button>
+                )}
               </div>
             )}
           </div>
