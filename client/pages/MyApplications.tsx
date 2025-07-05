@@ -26,6 +26,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
+import { useToast } from "@/hooks/use-toast";
 import {
   MapPin,
   DollarSign,
@@ -37,7 +38,18 @@ import {
   Filter,
 } from "lucide-react";
 import { Link } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import {
+  useAppDispatch,
+  useAppSelector,
+  selectApplications,
+} from "@/lib/store";
+import {
+  fetchApplications,
+  updateApplicationStatus,
+  updateApplicationNotes,
+  deleteApplication,
+} from "@/lib/store/slices/applicationsSlice";
 
 // Mock applications data
 const mockApplications = [
@@ -107,22 +119,124 @@ const statusColors = {
 };
 
 export default function MyApplications() {
+  const dispatch = useAppDispatch();
+  const { toast } = useToast();
+  const { applications, stats, isLoading, error } =
+    useAppSelector(selectApplications);
+
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [selectedApp, setSelectedApp] = useState<any>(null);
   const [notes, setNotes] = useState("");
+  const [isNotesDialogOpen, setIsNotesDialogOpen] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
 
-  const filteredApplications = mockApplications.filter((app) => {
+  // Load applications on component mount
+  useEffect(() => {
+    dispatch(fetchApplications());
+  }, [dispatch]);
+
+  // Show error toast
+  useEffect(() => {
+    if (error) {
+      toast({
+        title: "Error",
+        description: error,
+        variant: "destructive",
+      });
+    }
+  }, [error, toast]);
+
+  const filteredApplications = applications.filter((app) => {
     const matchesSearch =
-      app.jobTitle.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      app.company.toLowerCase().includes(searchTerm.toLowerCase());
+      app.job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      app.job.company.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === "all" || app.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
 
   const openNotesDialog = (app: any) => {
     setSelectedApp(app);
-    setNotes(app.notes);
+    setNotes(app.notes || "");
+    setIsNotesDialogOpen(true);
+  };
+
+  const handleStatusChange = async (
+    applicationId: string,
+    newStatus: string,
+  ) => {
+    try {
+      await dispatch(
+        updateApplicationStatus({ id: applicationId, status: newStatus }),
+      ).unwrap();
+      toast({
+        title: "Status Updated",
+        description: `Application status changed to ${newStatus}`,
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error || "Failed to update status",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleSaveNotes = async () => {
+    if (!selectedApp) return;
+
+    setIsUpdating(true);
+    try {
+      await dispatch(
+        updateApplicationNotes({
+          id: selectedApp.id,
+          notes: notes,
+        }),
+      ).unwrap();
+
+      toast({
+        title: "Notes Saved",
+        description: "Your notes have been updated successfully",
+      });
+      setIsNotesDialogOpen(false);
+      setSelectedApp(null);
+      setNotes("");
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error || "Failed to save notes",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleDeleteApplication = async (
+    applicationId: string,
+    jobTitle: string,
+  ) => {
+    if (
+      !confirm(
+        `Are you sure you want to delete the application for "${jobTitle}"?`,
+      )
+    ) {
+      return;
+    }
+
+    try {
+      await dispatch(deleteApplication(applicationId)).unwrap();
+      toast({
+        title: "Application Deleted",
+        description: `Application for "${jobTitle}" has been removed`,
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error || "Failed to delete application",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -177,10 +291,7 @@ export default function MyApplications() {
           <Card>
             <CardContent className="p-4">
               <div className="text-2xl font-bold text-blue-600">
-                {
-                  mockApplications.filter((app) => app.status === "Applied")
-                    .length
-                }
+                {stats.applied}
               </div>
               <div className="text-sm text-gray-600">Applied</div>
             </CardContent>
@@ -188,10 +299,7 @@ export default function MyApplications() {
           <Card>
             <CardContent className="p-4">
               <div className="text-2xl font-bold text-yellow-600">
-                {
-                  mockApplications.filter((app) => app.status === "Interview")
-                    .length
-                }
+                {stats.interview}
               </div>
               <div className="text-sm text-gray-600">Interviews</div>
             </CardContent>
@@ -199,10 +307,7 @@ export default function MyApplications() {
           <Card>
             <CardContent className="p-4">
               <div className="text-2xl font-bold text-green-600">
-                {
-                  mockApplications.filter((app) => app.status === "Offer")
-                    .length
-                }
+                {stats.offer}
               </div>
               <div className="text-sm text-gray-600">Offers</div>
             </CardContent>
@@ -210,127 +315,168 @@ export default function MyApplications() {
           <Card>
             <CardContent className="p-4">
               <div className="text-2xl font-bold text-gray-600">
-                {mockApplications.length}
+                {applications.length}
               </div>
               <div className="text-sm text-gray-600">Total</div>
             </CardContent>
           </Card>
         </div>
 
+        {/* Loading State */}
+        {isLoading && (
+          <div className="flex justify-center items-center py-12">
+            <div className="text-gray-500">Loading applications...</div>
+          </div>
+        )}
+
         {/* Applications Table */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Applications ({filteredApplications.length})</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Job & Company</TableHead>
-                    <TableHead>Location</TableHead>
-                    <TableHead>Salary</TableHead>
-                    <TableHead>Applied Date</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredApplications.map((app) => (
-                    <TableRow key={app.id}>
-                      <TableCell>
-                        <div>
-                          <div className="font-medium">{app.jobTitle}</div>
-                          <div className="text-sm text-gray-600">
-                            {app.company}
+        {!isLoading && (
+          <Card>
+            <CardHeader>
+              <CardTitle>
+                Applications ({filteredApplications.length})
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Job & Company</TableHead>
+                      <TableHead>Location</TableHead>
+                      <TableHead>Salary</TableHead>
+                      <TableHead>Applied Date</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredApplications.map((app) => (
+                      <TableRow key={app.id}>
+                        <TableCell>
+                          <div>
+                            <div className="font-medium">{app.job.title}</div>
+                            <div className="text-sm text-gray-600">
+                              {app.job.company}
+                            </div>
+                            <Badge variant="secondary" className="text-xs mt-1">
+                              {app.job.portal}
+                            </Badge>
                           </div>
-                          <Badge variant="secondary" className="text-xs mt-1">
-                            {app.portal}
-                          </Badge>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center text-sm text-gray-600">
-                          <MapPin className="w-3 h-3 mr-1" />
-                          {app.location}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center text-sm text-gray-600">
-                          <DollarSign className="w-3 h-3 mr-1" />
-                          {app.salary}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center text-sm text-gray-600">
-                          <Calendar className="w-3 h-3 mr-1" />
-                          {new Date(app.appliedDate).toLocaleDateString()}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Select defaultValue={app.status}>
-                          <SelectTrigger className="w-32">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="Applied">Applied</SelectItem>
-                            <SelectItem value="Interview">Interview</SelectItem>
-                            <SelectItem value="Rejected">Rejected</SelectItem>
-                            <SelectItem value="Offer">Offer</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Dialog>
-                            <DialogTrigger asChild>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center text-sm text-gray-600">
+                            <MapPin className="w-3 h-3 mr-1" />
+                            {app.job.location}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center text-sm text-gray-600">
+                            <DollarSign className="w-3 h-3 mr-1" />
+                            {app.job.salary}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center text-sm text-gray-600">
+                            <Calendar className="w-3 h-3 mr-1" />
+                            {new Date(app.appliedDate).toLocaleDateString()}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Select
+                            defaultValue={app.status}
+                            onValueChange={(value) =>
+                              handleStatusChange(app.id, value)
+                            }
+                          >
+                            <SelectTrigger className="w-32">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="Applied">Applied</SelectItem>
+                              <SelectItem value="Interview">
+                                Interview
+                              </SelectItem>
+                              <SelectItem value="Rejected">Rejected</SelectItem>
+                              <SelectItem value="Offer">Offer</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => openNotesDialog(app)}
+                              title="Edit notes"
+                            >
+                              <MessageSquare className="w-4 h-4" />
+                            </Button>
+                            <Link to={`/job/${app.jobId}`}>
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                onClick={() => openNotesDialog(app)}
+                                title="View job details"
                               >
-                                <MessageSquare className="w-4 h-4" />
+                                <Edit className="w-4 h-4" />
                               </Button>
-                            </DialogTrigger>
-                            <DialogContent>
-                              <DialogHeader>
-                                <DialogTitle>
-                                  Notes for {app.jobTitle}
-                                </DialogTitle>
-                              </DialogHeader>
-                              <div className="space-y-4">
-                                <Textarea
-                                  value={notes}
-                                  onChange={(e) => setNotes(e.target.value)}
-                                  placeholder="Add your notes..."
-                                  rows={4}
-                                />
-                                <div className="flex justify-end gap-2">
-                                  <Button variant="outline">Cancel</Button>
-                                  <Button>Save Notes</Button>
-                                </div>
-                              </div>
-                            </DialogContent>
-                          </Dialog>
-                          <Button variant="ghost" size="sm">
-                            <Edit className="w-4 h-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="text-red-600"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                            </Link>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-red-600 hover:text-red-700"
+                              onClick={() =>
+                                handleDeleteApplication(app.id, app.job.title)
+                              }
+                              title="Delete application"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Notes Dialog */}
+        <Dialog open={isNotesDialogOpen} onOpenChange={setIsNotesDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>
+                Notes for {selectedApp?.job?.title || "Job Application"}
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <Textarea
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder="Add your notes about this application..."
+                rows={4}
+              />
+              <div className="flex justify-end gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setIsNotesDialogOpen(false);
+                    setSelectedApp(null);
+                    setNotes("");
+                  }}
+                  disabled={isUpdating}
+                >
+                  Cancel
+                </Button>
+                <Button onClick={handleSaveNotes} disabled={isUpdating}>
+                  {isUpdating ? "Saving..." : "Save Notes"}
+                </Button>
+              </div>
             </div>
-          </CardContent>
-        </Card>
+          </DialogContent>
+        </Dialog>
 
         {filteredApplications.length === 0 && (
           <Card className="mt-6">
