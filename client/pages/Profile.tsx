@@ -5,8 +5,25 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
+import { useToast } from "@/hooks/use-toast";
 import { User, Mail, Camera, Eye, EyeOff, Save } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import {
+  useAppDispatch,
+  useAppSelector,
+  selectProfile,
+  selectAuth,
+} from "@/lib/store";
+import {
+  fetchProfile,
+  updateProfile,
+  uploadAvatar,
+  fetchProfileStats,
+  deleteAccount,
+  exportData,
+} from "@/lib/store/slices/profileSlice";
+import { changePassword } from "@/lib/store/slices/authSlice";
+import { useNavigate } from "react-router-dom";
 
 // Mock user data
 const mockUser = {
@@ -19,14 +36,21 @@ const mockUser = {
 };
 
 export default function Profile() {
+  const dispatch = useAppDispatch();
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const { profile, stats, isLoading, error, isUpdating } =
+    useAppSelector(selectProfile);
+  const { user } = useAppSelector(selectAuth);
+
   const [isEditing, setIsEditing] = useState(false);
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const [profileData, setProfileData] = useState({
-    name: mockUser.name,
-    email: mockUser.email,
+    name: "",
+    email: "",
   });
 
   const [passwordData, setPasswordData] = useState({
@@ -35,20 +59,181 @@ export default function Profile() {
     confirmPassword: "",
   });
 
-  const handleProfileSave = () => {
-    // Handle profile update
-    setIsEditing(false);
-    console.log("Profile updated:", profileData);
+  // Load profile data on component mount
+  useEffect(() => {
+    dispatch(fetchProfile());
+    dispatch(fetchProfileStats());
+  }, [dispatch]);
+
+  // Update profile data when user data changes
+  useEffect(() => {
+    if (user) {
+      setProfileData({
+        name: user.name,
+        email: user.email,
+      });
+    }
+  }, [user]);
+
+  // Show error toast
+  useEffect(() => {
+    if (error) {
+      toast({
+        title: "Error",
+        description: error,
+        variant: "destructive",
+      });
+    }
+  }, [error, toast]);
+
+  const handleProfileSave = async () => {
+    try {
+      await dispatch(updateProfile(profileData)).unwrap();
+      toast({
+        title: "Profile Updated",
+        description: "Your profile has been updated successfully",
+      });
+      setIsEditing(false);
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error || "Failed to update profile",
+        variant: "destructive",
+      });
+    }
   };
 
-  const handlePasswordSave = () => {
-    // Handle password change
-    console.log("Password changed");
-    setPasswordData({
-      currentPassword: "",
-      newPassword: "",
-      confirmPassword: "",
-    });
+  const handlePasswordSave = async () => {
+    // Validation
+    if (
+      !passwordData.currentPassword ||
+      !passwordData.newPassword ||
+      !passwordData.confirmPassword
+    ) {
+      toast({
+        title: "Validation Error",
+        description: "Please fill in all password fields",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      toast({
+        title: "Validation Error",
+        description: "New passwords do not match",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (passwordData.newPassword.length < 6) {
+      toast({
+        title: "Validation Error",
+        description: "New password must be at least 6 characters long",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      await dispatch(changePassword(passwordData)).unwrap();
+      toast({
+        title: "Password Changed",
+        description: "Your password has been updated successfully",
+      });
+      setPasswordData({
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: "",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error || "Failed to change password",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleAvatarUpload = async (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith("image/")) {
+      toast({
+        title: "Invalid File",
+        description: "Please select an image file",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate file size (5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        title: "File Too Large",
+        description: "Please select an image smaller than 5MB",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      await dispatch(uploadAvatar(file)).unwrap();
+      toast({
+        title: "Avatar Updated",
+        description: "Your profile picture has been updated successfully",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error || "Failed to upload avatar",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleExportData = async () => {
+    try {
+      await dispatch(exportData()).unwrap();
+      toast({
+        title: "Data Exported",
+        description: "Your data has been exported and downloaded successfully",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error || "Failed to export data",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    const confirmed = window.confirm(
+      "Are you sure you want to delete your account? This action cannot be undone and will permanently delete all your data.",
+    );
+
+    if (!confirmed) return;
+
+    try {
+      await dispatch(deleteAccount()).unwrap();
+      toast({
+        title: "Account Deleted",
+        description: "Your account has been permanently deleted",
+      });
+      navigate("/");
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error || "Failed to delete account",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -71,28 +256,44 @@ export default function Profile() {
               <CardContent className="p-6 text-center">
                 <div className="relative inline-block mb-4">
                   <Avatar className="w-24 h-24">
-                    <AvatarImage src={mockUser.avatar} />
+                    <AvatarImage src={user?.avatar} />
                     <AvatarFallback className="text-2xl">
-                      {mockUser.name
+                      {user?.name
                         .split(" ")
                         .map((n) => n[0])
                         .join("")}
                     </AvatarFallback>
                   </Avatar>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="absolute -bottom-2 -right-2 rounded-full w-8 h-8 p-0"
-                  >
-                    <Camera className="w-4 h-4" />
-                  </Button>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleAvatarUpload}
+                    className="hidden"
+                    id="avatar-upload"
+                  />
+                  <label htmlFor="avatar-upload">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="absolute -bottom-2 -right-2 rounded-full w-8 h-8 p-0 cursor-pointer"
+                      asChild
+                      disabled={isUpdating}
+                    >
+                      <span>
+                        <Camera className="w-4 h-4" />
+                      </span>
+                    </Button>
+                  </label>
                 </div>
                 <h3 className="text-xl font-semibold text-gray-900 mb-1">
-                  {mockUser.name}
+                  {user?.name}
                 </h3>
-                <p className="text-gray-600 mb-4">{mockUser.email}</p>
+                <p className="text-gray-600 mb-4">{user?.email}</p>
                 <div className="text-sm text-gray-500">
-                  Member since {mockUser.joinDate}
+                  Member since{" "}
+                  {stats?.joinDate
+                    ? new Date(stats.joinDate).toLocaleDateString()
+                    : "Unknown"}
                 </div>
               </CardContent>
             </Card>
@@ -103,33 +304,61 @@ export default function Profile() {
                 <CardTitle className="text-lg">Statistics</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Applications</span>
-                    <span className="font-semibold">
-                      {mockUser.applicationsCount}
-                    </span>
+                {isLoading ? (
+                  <div className="text-center text-gray-500">
+                    Loading stats...
                   </div>
-                  <Separator />
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Interviews</span>
-                    <span className="font-semibold">
-                      {mockUser.interviewsCount}
-                    </span>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Applications</span>
+                      <span className="font-semibold">
+                        {stats?.applicationsCount || 0}
+                      </span>
+                    </div>
+                    <Separator />
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Interviews</span>
+                      <span className="font-semibold">
+                        {stats?.interviewsCount || 0}
+                      </span>
+                    </div>
+                    <Separator />
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Offers</span>
+                      <span className="font-semibold">
+                        {stats?.offersCount || 0}
+                      </span>
+                    </div>
+                    <Separator />
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Success Rate</span>
+                      <span className="font-semibold">
+                        {stats?.successRate || 0}%
+                      </span>
+                    </div>
                   </div>
-                  <Separator />
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Success Rate</span>
-                    <span className="font-semibold">
-                      {Math.round(
-                        (mockUser.interviewsCount /
-                          mockUser.applicationsCount) *
-                          100,
-                      )}
-                      %
-                    </span>
-                  </div>
-                </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Export Data */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Data Export</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-gray-600 mb-4">
+                  Download all your data including applications, notes, and
+                  profile information.
+                </p>
+                <Button
+                  variant="outline"
+                  onClick={handleExportData}
+                  disabled={isLoading}
+                >
+                  {isLoading ? "Exporting..." : "Export My Data"}
+                </Button>
               </CardContent>
             </Card>
           </div>
@@ -310,9 +539,9 @@ export default function Profile() {
                 </div>
 
                 <div className="flex justify-end">
-                  <Button onClick={handlePasswordSave}>
+                  <Button onClick={handlePasswordSave} disabled={isLoading}>
                     <Save className="w-4 h-4 mr-2" />
-                    Change Password
+                    {isLoading ? "Changing..." : "Change Password"}
                   </Button>
                 </div>
               </CardContent>
@@ -331,9 +560,16 @@ export default function Profile() {
                     </h4>
                     <p className="text-sm text-gray-600">
                       Permanently delete your account and all associated data.
+                      This action cannot be undone.
                     </p>
                   </div>
-                  <Button variant="destructive">Delete Account</Button>
+                  <Button
+                    variant="destructive"
+                    onClick={handleDeleteAccount}
+                    disabled={isLoading}
+                  >
+                    {isLoading ? "Deleting..." : "Delete Account"}
+                  </Button>
                 </div>
               </CardContent>
             </Card>
