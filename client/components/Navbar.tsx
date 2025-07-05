@@ -1,13 +1,32 @@
 import { Button } from "@/components/ui/button";
 import { Briefcase } from "lucide-react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import {
+  useAppDispatch,
+  useAppSelector,
+  selectIsAuthenticated,
+} from "@/lib/store";
+import { logoutUser } from "@/lib/store/slices/authSlice";
 
 interface NavbarProps {
   isAuthenticated?: boolean;
 }
 
-export default function Navbar({ isAuthenticated = false }: NavbarProps) {
+export default function Navbar({
+  isAuthenticated: propIsAuthenticated,
+}: NavbarProps) {
   const location = useLocation();
+  const navigate = useNavigate();
+  const dispatch = useAppDispatch();
+  const reduxIsAuthenticated = useAppSelector(selectIsAuthenticated);
+
+  // Use prop if provided, otherwise use Redux state
+  const isAuthenticated = propIsAuthenticated ?? reduxIsAuthenticated;
+
+  const handleLogout = async () => {
+    await dispatch(logoutUser());
+    navigate("/");
+  };
 
   if (isAuthenticated) {
     return (
@@ -53,7 +72,7 @@ export default function Navbar({ isAuthenticated = false }: NavbarProps) {
               >
                 Profile
               </Link>
-              <Button variant="outline" size="sm">
+              <Button variant="outline" size="sm" onClick={handleLogout}>
                 Logout
               </Button>
             </div>
