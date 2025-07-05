@@ -126,6 +126,8 @@ export default function MyApplications() {
 
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [sortBy, setSortBy] = useState("appliedDate");
+  const [sortOrder, setSortOrder] = useState("desc");
   const [selectedApp, setSelectedApp] = useState<any>(null);
   const [notes, setNotes] = useState("");
   const [isNotesDialogOpen, setIsNotesDialogOpen] = useState(false);
@@ -147,13 +149,65 @@ export default function MyApplications() {
     }
   }, [error, toast]);
 
-  const filteredApplications = applications.filter((app) => {
-    const matchesSearch =
-      app.job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      app.job.company.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === "all" || app.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
+  const filteredApplications = applications
+    .filter((app) => {
+      const matchesSearch =
+        searchTerm === "" ||
+        app.job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        app.job.company.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        app.job.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (app.notes &&
+          app.notes.toLowerCase().includes(searchTerm.toLowerCase()));
+
+      const matchesStatus =
+        statusFilter === "all" || app.status === statusFilter;
+
+      return matchesSearch && matchesStatus;
+    })
+    .sort((a, b) => {
+      let comparison = 0;
+
+      switch (sortBy) {
+        case "appliedDate":
+          comparison =
+            new Date(a.appliedDate).getTime() -
+            new Date(b.appliedDate).getTime();
+          break;
+        case "jobTitle":
+          comparison = a.job.title.localeCompare(b.job.title);
+          break;
+        case "company":
+          comparison = a.job.company.localeCompare(b.job.company);
+          break;
+        case "status":
+          comparison = a.status.localeCompare(b.status);
+          break;
+        default:
+          comparison = 0;
+      }
+
+      return sortOrder === "desc" ? -comparison : comparison;
+    });
+
+  const handleClearSearch = () => {
+    setSearchTerm("");
+    setStatusFilter("all");
+    toast({
+      title: "Search Cleared",
+      description: "Search and filters have been reset",
+    });
+  };
+
+  const handleSortChange = (value: string) => {
+    const [newSortBy, newSortOrder] = value.split("-");
+    setSortBy(newSortBy);
+    setSortOrder(newSortOrder);
+
+    toast({
+      title: "Sorting Updated",
+      description: `Sorted by ${newSortBy} (${newSortOrder === "desc" ? "newest first" : "oldest first"})`,
+    });
+  };
 
   const openNotesDialog = (app: any) => {
     setSelectedApp(app);
