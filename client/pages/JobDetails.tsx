@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { useToast } from "@/hooks/use-toast";
 import {
   MapPin,
   DollarSign,
@@ -13,6 +14,10 @@ import {
   ArrowLeft,
 } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useAppDispatch, useAppSelector, selectJobs } from "@/lib/store";
+import { fetchJobById } from "@/lib/store/slices/jobsSlice";
+import { createApplication } from "@/lib/store/slices/applicationsSlice";
 
 // Mock job data - in real app this would come from API
 const mockJob = {
@@ -86,6 +91,82 @@ Join our team and help us build the next generation of web applications that wil
 
 export default function JobDetails() {
   const { id } = useParams();
+  const dispatch = useAppDispatch();
+  const { toast } = useToast();
+  const { currentJob, isLoading, error } = useAppSelector(selectJobs);
+  const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    if (id) {
+      dispatch(fetchJobById(id));
+    }
+  }, [dispatch, id]);
+
+  useEffect(() => {
+    if (error) {
+      toast({
+        title: "Error",
+        description: error,
+        variant: "destructive",
+      });
+    }
+  }, [error, toast]);
+
+  const handleSaveJob = async () => {
+    if (!currentJob) return;
+
+    setIsSaving(true);
+    try {
+      await dispatch(
+        createApplication({
+          jobId: currentJob.id,
+          notes: `Applied to ${currentJob.title} at ${currentJob.company}`,
+        }),
+      ).unwrap();
+
+      toast({
+        title: "Success!",
+        description: "Job saved to your applications successfully!",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error || "Failed to save job. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Navbar isAuthenticated={true} />
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="flex justify-center items-center py-12">
+            <div className="text-gray-500">Loading job details...</div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!currentJob) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Navbar isAuthenticated={true} />
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="text-center py-12">
+            <div className="text-gray-500 mb-4">Job not found</div>
+            <Link to="/dashboard">
+              <Button>Back to Dashboard</Button>
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -108,30 +189,30 @@ export default function JobDetails() {
             <Card className="mb-6">
               <CardHeader>
                 <div className="flex justify-between items-start mb-4">
-                  <Badge variant="secondary">{mockJob.portal}</Badge>
+                  <Badge variant="secondary">{currentJob.portal}</Badge>
                   <div className="flex items-center text-sm text-gray-500">
                     <Clock className="w-4 h-4 mr-1" />
-                    {mockJob.postedDate}
+                    {new Date(currentJob.postedDate).toLocaleDateString()}
                   </div>
                 </div>
                 <CardTitle className="text-2xl lg:text-3xl mb-2">
-                  {mockJob.title}
+                  {currentJob.title}
                 </CardTitle>
                 <div className="flex items-center text-lg text-gray-600 mb-4">
                   <Building className="w-5 h-5 mr-2" />
-                  {mockJob.company}
+                  {currentJob.company}
                 </div>
 
                 <div className="flex flex-wrap gap-4 text-gray-600">
                   <div className="flex items-center">
                     <MapPin className="w-4 h-4 mr-2" />
-                    {mockJob.location}
+                    {currentJob.location}
                   </div>
                   <div className="flex items-center">
                     <DollarSign className="w-4 h-4 mr-2" />
-                    {mockJob.salary}
+                    {currentJob.salary}
                   </div>
-                  <Badge variant="outline">{mockJob.type}</Badge>
+                  <Badge variant="outline">{currentJob.type}</Badge>
                 </div>
               </CardHeader>
             </Card>
@@ -143,7 +224,7 @@ export default function JobDetails() {
               </CardHeader>
               <CardContent className="prose prose-gray max-w-none">
                 <div className="whitespace-pre-line text-gray-700 leading-relaxed">
-                  {mockJob.description}
+                  {currentJob.description}
                 </div>
               </CardContent>
             </Card>
@@ -155,9 +236,14 @@ export default function JobDetails() {
             <Card>
               <CardContent className="p-6">
                 <div className="space-y-3">
-                  <Button className="w-full" size="lg">
+                  <Button
+                    className="w-full"
+                    size="lg"
+                    onClick={handleSaveJob}
+                    disabled={isSaving}
+                  >
                     <Bookmark className="w-4 h-4 mr-2" />
-                    Save to My Applications
+                    {isSaving ? "Saving..." : "Save to My Applications"}
                   </Button>
                   <Button
                     variant="outline"
@@ -166,12 +252,18 @@ export default function JobDetails() {
                     asChild
                   >
                     <a
-                      href={mockJob.portalUrl}
+                      href={currentJob.portalUrl}
                       target="_blank"
                       rel="noopener noreferrer"
+                      onClick={() => {
+                        toast({
+                          title: "Opening External Link",
+                          description: `Redirecting to ${currentJob.portal}...`,
+                        });
+                      }}
                     >
                       <ExternalLink className="w-4 h-4 mr-2" />
-                      View on {mockJob.portal}
+                      View on {currentJob.portal}
                     </a>
                   </Button>
                 </div>
@@ -185,7 +277,7 @@ export default function JobDetails() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
-                  {mockJob.requirements.map((req, index) => (
+                  {currentJob.requirements.map((req, index) => (
                     <div key={index} className="flex items-center text-sm">
                       <div className="w-2 h-2 bg-primary rounded-full mr-3"></div>
                       {req}
@@ -202,7 +294,7 @@ export default function JobDetails() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
-                  {mockJob.benefits.map((benefit, index) => (
+                  {currentJob.benefits.map((benefit, index) => (
                     <div key={index} className="flex items-center text-sm">
                       <div className="w-2 h-2 bg-green-500 rounded-full mr-3"></div>
                       {benefit}
@@ -222,21 +314,21 @@ export default function JobDetails() {
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-600">Company Size:</span>
                     <span className="font-medium">
-                      {mockJob.companyInfo.size}
+                      {currentJob.companyInfo.size}
                     </span>
                   </div>
                   <Separator />
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-600">Industry:</span>
                     <span className="font-medium">
-                      {mockJob.companyInfo.industry}
+                      {currentJob.companyInfo.industry}
                     </span>
                   </div>
                   <Separator />
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-600">Founded:</span>
                     <span className="font-medium">
-                      {mockJob.companyInfo.founded}
+                      {currentJob.companyInfo.founded}
                     </span>
                   </div>
                 </div>
