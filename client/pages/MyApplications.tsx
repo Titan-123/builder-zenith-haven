@@ -596,23 +596,40 @@ export default function MyApplications() {
           </DialogContent>
         </Dialog>
 
-        {filteredApplications.length === 0 && (
+        {filteredApplications.length === 0 && !isLoading && (
           <Card className="mt-6">
             <CardContent className="p-12 text-center">
               <div className="text-gray-400 mb-4">
                 <MessageSquare className="w-16 h-16 mx-auto" />
               </div>
               <h3 className="text-lg font-medium text-gray-900 mb-2">
-                No applications found
+                {applications.length === 0
+                  ? "No applications yet"
+                  : "No applications found"}
               </h3>
               <p className="text-gray-600 mb-4">
-                {searchTerm || statusFilter !== "all"
-                  ? "Try adjusting your search or filters"
-                  : "Start applying to jobs to see them here"}
+                {applications.length === 0
+                  ? "Start applying to jobs to track them here"
+                  : searchTerm || statusFilter !== "all"
+                    ? "Try adjusting your search criteria or clearing filters"
+                    : "No applications match your current filters"}
               </p>
-              <Link to="/dashboard">
-                <Button>Browse Jobs</Button>
-              </Link>
+              <div className="flex justify-center gap-2">
+                {searchTerm || statusFilter !== "all" ? (
+                  <>
+                    <Button variant="outline" onClick={handleClearSearch}>
+                      Clear Filters
+                    </Button>
+                    <Link to="/dashboard">
+                      <Button>Browse Jobs</Button>
+                    </Link>
+                  </>
+                ) : (
+                  <Link to="/dashboard">
+                    <Button>Browse Jobs</Button>
+                  </Link>
+                )}
+              </div>
             </CardContent>
           </Card>
         )}
