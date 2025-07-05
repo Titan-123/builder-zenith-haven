@@ -257,15 +257,25 @@ export default function MyApplications() {
         {/* Filters and Search */}
         <Card className="mb-6">
           <CardContent className="p-6">
-            <div className="flex flex-col lg:flex-row gap-4">
+            <div className="flex flex-col lg:flex-row gap-4 mb-4">
               <div className="flex-1 relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                 <Input
-                  placeholder="Search applications..."
+                  placeholder="Search by job title, company, location, or notes..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10"
                 />
+                {searchTerm && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-2 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0"
+                    onClick={() => setSearchTerm("")}
+                  >
+                    <X className="w-3 h-3" />
+                  </Button>
+                )}
               </div>
               <div className="flex gap-2">
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
@@ -281,7 +291,61 @@ export default function MyApplications() {
                     <SelectItem value="Offer">Offer</SelectItem>
                   </SelectContent>
                 </Select>
+
+                <Select
+                  value={`${sortBy}-${sortOrder}`}
+                  onValueChange={handleSortChange}
+                >
+                  <SelectTrigger className="w-48">
+                    <SelectValue placeholder="Sort by" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="appliedDate-desc">
+                      Newest Applications
+                    </SelectItem>
+                    <SelectItem value="appliedDate-asc">
+                      Oldest Applications
+                    </SelectItem>
+                    <SelectItem value="jobTitle-asc">Job Title A-Z</SelectItem>
+                    <SelectItem value="jobTitle-desc">Job Title Z-A</SelectItem>
+                    <SelectItem value="company-asc">Company A-Z</SelectItem>
+                    <SelectItem value="company-desc">Company Z-A</SelectItem>
+                    <SelectItem value="status-asc">Status A-Z</SelectItem>
+                    <SelectItem value="status-desc">Status Z-A</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                {(searchTerm || statusFilter !== "all") && (
+                  <Button variant="outline" onClick={handleClearSearch}>
+                    <X className="w-4 h-4 mr-1" />
+                    Clear
+                  </Button>
+                )}
               </div>
+            </div>
+
+            {/* Search Results Summary */}
+            <div className="flex items-center justify-between text-sm text-gray-600">
+              <div>
+                {searchTerm || statusFilter !== "all" ? (
+                  <span>
+                    Showing {filteredApplications.length} of{" "}
+                    {applications.length} applications
+                    {searchTerm && ` matching "${searchTerm}"`}
+                    {statusFilter !== "all" && ` with status "${statusFilter}"`}
+                  </span>
+                ) : (
+                  <span>Showing all {applications.length} applications</span>
+                )}
+              </div>
+
+              {(searchTerm || statusFilter !== "all") && (
+                <div className="flex items-center space-x-2">
+                  <Badge variant="secondary" className="text-xs">
+                    {filteredApplications.length} results
+                  </Badge>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
