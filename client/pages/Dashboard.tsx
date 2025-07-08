@@ -100,7 +100,9 @@ export default function Dashboard() {
 
     // Remove empty values
     const cleanFilters = Object.fromEntries(
-      Object.entries(searchFilters).filter(([_, value]) => value !== ""),
+      Object.entries(searchFilters).filter(
+        ([_, value]) => value !== "" && value !== "all",
+      ),
     );
 
     const pagination = {
@@ -269,7 +271,9 @@ export default function Dashboard() {
     };
 
     const cleanFilters = Object.fromEntries(
-      Object.entries(searchFilters).filter(([_, value]) => value !== ""),
+      Object.entries(searchFilters).filter(
+        ([_, value]) => value !== "" && value !== "all",
+      ),
     );
 
     const pagination = {
