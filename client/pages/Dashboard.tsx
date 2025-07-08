@@ -52,11 +52,11 @@ export default function Dashboard() {
   });
 
   const [currentFilters, setCurrentFilters] = useState({
-    role: "",
-    location: "",
-    experience: "",
-    salaryRange: "",
-    portal: "",
+    role: "all",
+    location: "all",
+    experience: "all",
+    salaryRange: "all",
+    portal: "all",
   });
 
   const [sortBy, setSortBy] = useState("postedDate");
@@ -141,7 +141,9 @@ export default function Dashboard() {
         };
 
         const cleanFilters = Object.fromEntries(
-          Object.entries(searchFilters).filter(([_, v]) => v !== ""),
+          Object.entries(searchFilters).filter(
+            ([_, v]) => v !== "" && v !== "all",
+          ),
         );
 
         const pagination = {
@@ -222,11 +224,11 @@ export default function Dashboard() {
       locationSearch: "",
     });
     setCurrentFilters({
-      role: "",
-      location: "",
-      experience: "",
-      salaryRange: "",
-      portal: "",
+      role: "all",
+      location: "all",
+      experience: "all",
+      salaryRange: "all",
+      portal: "all",
     });
     setCurrentPage(1);
     setSortBy("postedDate");
@@ -282,7 +284,9 @@ export default function Dashboard() {
 
   // Count active filters
   const activeFiltersCount =
-    Object.values(currentFilters).filter((value) => value !== "").length +
+    Object.values(currentFilters).filter(
+      (value) => value !== "all" && value !== "",
+    ).length +
     (searchForm.search ? 1 : 0) +
     (searchForm.locationSearch ? 1 : 0);
 
@@ -464,7 +468,8 @@ export default function Dashboard() {
                     )}
                     {Object.entries(currentFilters).map(
                       ([key, value]) =>
-                        value && (
+                        value &&
+                        value !== "all" && (
                           <Badge
                             key={key}
                             variant="secondary"
