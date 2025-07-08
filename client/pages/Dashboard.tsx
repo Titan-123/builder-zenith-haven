@@ -330,7 +330,7 @@ export default function Dashboard() {
                     <SelectValue placeholder="Select role" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All Roles</SelectItem>
+                    <SelectItem value="all">All Roles</SelectItem>
                     <SelectItem value="frontend">Frontend Developer</SelectItem>
                     <SelectItem value="backend">Backend Developer</SelectItem>
                     <SelectItem value="fullstack">
@@ -358,7 +358,7 @@ export default function Dashboard() {
                     <SelectValue placeholder="Select location" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All Locations</SelectItem>
+                    <SelectItem value="all">All Locations</SelectItem>
                     <SelectItem value="San Francisco, CA">
                       San Francisco, CA
                     </SelectItem>
@@ -386,7 +386,7 @@ export default function Dashboard() {
                     <SelectValue placeholder="Select experience" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All Levels</SelectItem>
+                    <SelectItem value="all">All Levels</SelectItem>
                     <SelectItem value="entry">
                       Entry Level (0-2 years)
                     </SelectItem>
@@ -415,7 +415,7 @@ export default function Dashboard() {
                     <SelectValue placeholder="Select salary range" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All Salaries</SelectItem>
+                    <SelectItem value="all">All Salaries</SelectItem>
                     <SelectItem value="50-70">$50k - $70k</SelectItem>
                     <SelectItem value="70-90">$70k - $90k</SelectItem>
                     <SelectItem value="90-120">$90k - $120k</SelectItem>
@@ -437,7 +437,7 @@ export default function Dashboard() {
                     <SelectValue placeholder="Select portal" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All Portals</SelectItem>
+                    <SelectItem value="all">All Portals</SelectItem>
                     {portals.map((portal) => (
                       <SelectItem key={portal} value={portal}>
                         {portal}
