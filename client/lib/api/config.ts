@@ -1,7 +1,10 @@
 // API configuration - environment aware
 const getBaseURL = () => {
-  // Only use localhost:5000 if running on actual localhost
-  if (window.location.hostname === "localhost") {
+  // Only use localhost:5000 if running on actual localhost (not hosted environments)
+  if (
+    window.location.hostname === "localhost" ||
+    window.location.hostname === "127.0.0.1"
+  ) {
     return "http://localhost:5000";
   }
   // For hosted development environments (like fly.dev), use the netlify functions
