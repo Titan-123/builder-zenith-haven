@@ -1,0 +1,15 @@
+// API configuration - environment aware
+const getBaseURL = () => {
+  // Check if we're in development and localhost:5000 is available
+  if (import.meta.env.DEV && window.location.hostname === "localhost") {
+    return "http://localhost:5000";
+  }
+  // Fall back to relative API paths for production/hosted environments
+  return "/api";
+};
+
+export const API_CONFIG = {
+  BASE_URL: getBaseURL(),
+  TIMEOUT: 30000, // 30 seconds
+  MAX_RETRIES: 3,
+};

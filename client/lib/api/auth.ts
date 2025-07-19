@@ -7,7 +7,7 @@ import {
   ApiResponse,
 } from "@shared/api";
 
-import { API_CONFIG } from "./index";
+import { API_CONFIG } from "./config";
 
 const API_BASE = API_CONFIG.BASE_URL;
 

@@ -6,7 +6,7 @@ import {
 } from "@shared/api";
 import { authAPI } from "./auth";
 
-import { API_CONFIG } from "./index";
+import { API_CONFIG } from "./config";
 
 const API_BASE = API_CONFIG.BASE_URL;
 
