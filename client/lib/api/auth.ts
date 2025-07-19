@@ -16,6 +16,8 @@ class AuthAPI {
       headers: {
         "Content-Type": "application/json",
       },
+      mode: "cors",
+      credentials: "include",
       body: JSON.stringify(data),
     });
 
@@ -39,6 +41,8 @@ class AuthAPI {
       headers: {
         "Content-Type": "application/json",
       },
+      mode: "cors",
+      credentials: "include",
       body: JSON.stringify(data),
     });
 
@@ -62,6 +66,8 @@ class AuthAPI {
       headers: {
         "Content-Type": "application/json",
       },
+      mode: "cors",
+      credentials: "include",
       body: JSON.stringify({ token }),
     });
 
