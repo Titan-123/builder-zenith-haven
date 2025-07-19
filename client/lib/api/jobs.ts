@@ -9,6 +9,17 @@ import { authAPI } from "./auth";
 
 const API_BASE = "http://localhost:5000";
 
+// Common fetch configuration for CORS
+const getFetchConfig = (options: RequestInit = {}): RequestInit => ({
+  ...options,
+  mode: "cors",
+  credentials: "include",
+  headers: {
+    "Content-Type": "application/json",
+    ...options.headers,
+  },
+});
+
 class JobsAPI {
   async searchJobs(
     filters: JobFilters = {},
@@ -34,6 +45,7 @@ class JobsAPI {
 
     const response = await fetch(
       `${API_BASE}/jobs/search?${params.toString()}`,
+      getFetchConfig(),
     );
     const result: ApiResponse<JobSearchResponse> = await response.json();
 
