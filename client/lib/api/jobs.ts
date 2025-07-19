@@ -48,21 +48,11 @@ class JobsAPI {
       if (pagination.sortOrder)
         params.append("sortOrder", pagination.sortOrder);
 
-<<<<<<< HEAD
       const response = await fetch(
         `${API_BASE}/jobs/search?${params.toString()}`,
         getFetchConfig(),
       );
       const result: ApiResponse<JobSearchResponse> = await response.json();
-=======
-    const response = await fetch(
-      `${API_BASE}/jobs/search?${params.toString()}`,
-      getFetchConfig(),
-    );
-
-    console.log("response---",response)
-    const result: ApiResponse<JobSearchResponse> = await response.json();
->>>>>>> origin/main
 
       if (!response.ok || !result.success) {
         throw new Error(result.message || "Failed to search jobs");
