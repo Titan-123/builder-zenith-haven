@@ -1,9 +1,10 @@
 // API configuration - environment aware
 const getBaseURL = () => {
-  // Only use localhost:5000 if running on actual localhost (not hosted environments)
+  // Only use localhost:5000 if running on actual localhost AND not in hosted environment
   if (
-    window.location.hostname === "localhost" ||
-    window.location.hostname === "127.0.0.1"
+    (window.location.hostname === "localhost" ||
+      window.location.hostname === "127.0.0.1") &&
+    !window.location.href.includes("fly.dev")
   ) {
     return "http://localhost:5000";
   }
