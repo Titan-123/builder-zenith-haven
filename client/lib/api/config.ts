@@ -18,3 +18,13 @@ export const API_CONFIG = {
 export const isUsingLocalBackend = () => {
   return API_CONFIG.BASE_URL.includes("localhost:5000");
 };
+
+// Debug logging in development
+if (import.meta.env.DEV) {
+  console.log("🔗 API Configuration:", {
+    baseURL: API_CONFIG.BASE_URL,
+    isLocal: isUsingLocalBackend(),
+    hostname: window.location.hostname,
+    environment: import.meta.env.MODE,
+  });
+}
