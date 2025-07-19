@@ -9,17 +9,26 @@ import {
 
 const API_BASE = "http://localhost:5000";
 
+// Common fetch configuration for CORS
+const getFetchConfig = (options: RequestInit = {}): RequestInit => ({
+  ...options,
+  mode: "cors",
+  credentials: "include",
+  headers: {
+    "Content-Type": "application/json",
+    ...options.headers,
+  },
+});
+
 class AuthAPI {
   async register(data: RegisterRequest): Promise<AuthResponse> {
-    const response = await fetch(`${API_BASE}/auth/register`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      mode: "cors",
-      credentials: "include",
-      body: JSON.stringify(data),
-    });
+    const response = await fetch(
+      `${API_BASE}/auth/register`,
+      getFetchConfig({
+        method: "POST",
+        body: JSON.stringify(data),
+      }),
+    );
 
     const result: ApiResponse<AuthResponse> = await response.json();
 
@@ -36,15 +45,13 @@ class AuthAPI {
   }
 
   async login(data: LoginRequest): Promise<AuthResponse> {
-    const response = await fetch(`${API_BASE}/auth/login`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      mode: "cors",
-      credentials: "include",
-      body: JSON.stringify(data),
-    });
+    const response = await fetch(
+      `${API_BASE}/auth/login`,
+      getFetchConfig({
+        method: "POST",
+        body: JSON.stringify(data),
+      }),
+    );
 
     const result: ApiResponse<AuthResponse> = await response.json();
 
@@ -61,15 +68,13 @@ class AuthAPI {
   }
 
   async googleLogin(token: string): Promise<AuthResponse> {
-    const response = await fetch(`${API_BASE}/auth/google`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      mode: "cors",
-      credentials: "include",
-      body: JSON.stringify({ token }),
-    });
+    const response = await fetch(
+      `${API_BASE}/auth/google`,
+      getFetchConfig({
+        method: "POST",
+        body: JSON.stringify({ token }),
+      }),
+    );
 
     const result: ApiResponse<AuthResponse> = await response.json();
 
