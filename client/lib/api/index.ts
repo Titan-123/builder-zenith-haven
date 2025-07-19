@@ -54,6 +54,15 @@ export async function apiCall<T>(
     if (error instanceof APIError) {
       throw error;
     }
+
+    // Check if it's a network error (like CORS or connection refused)
+    if (error instanceof TypeError && error.message.includes("fetch")) {
+      throw new APIError(
+        "Unable to connect to the server. Please check if the backend is running on localhost:5000 or try refreshing the page.",
+        503,
+      );
+    }
+
     throw new APIError("Network error or invalid response");
   }
 }
