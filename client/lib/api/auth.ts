@@ -93,11 +93,14 @@ class AuthAPI {
   async getCurrentUser(): Promise<User> {
     const token = this.getToken();
 
-    const response = await fetch(`${API_BASE}/auth/me`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
+    const response = await fetch(
+      `${API_BASE}/auth/me`,
+      getFetchConfig({
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }),
+    );
 
     const result: ApiResponse<User> = await response.json();
 
@@ -111,14 +114,16 @@ class AuthAPI {
   async changePassword(data: ChangePasswordRequest): Promise<void> {
     const token = this.getToken();
 
-    const response = await fetch(`${API_BASE}/auth/change-password`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify(data),
-    });
+    const response = await fetch(
+      `${API_BASE}/auth/change-password`,
+      getFetchConfig({
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(data),
+      }),
+    );
 
     const result: ApiResponse = await response.json();
 
@@ -131,12 +136,15 @@ class AuthAPI {
     const token = this.getToken();
 
     try {
-      await fetch(`${API_BASE}/auth/logout`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      await fetch(
+        `${API_BASE}/auth/logout`,
+        getFetchConfig({
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }),
+      );
     } finally {
       // Always remove token from localStorage
       localStorage.removeItem("auth_token");
