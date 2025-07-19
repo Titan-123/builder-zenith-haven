@@ -26,7 +26,7 @@ export class APIError extends Error {
   }
 }
 
-// Generic API call wrapper with error handling
+// Generic API call wrapper with error handling and CORS support
 export async function apiCall<T>(
   url: string,
   options: RequestInit = {},
@@ -38,6 +38,9 @@ export async function apiCall<T>(
         "Content-Type": "application/json",
         ...options.headers,
       },
+      // Add CORS mode for cross-origin requests
+      mode: "cors",
+      credentials: "include",
     });
 
     const result = await response.json();
