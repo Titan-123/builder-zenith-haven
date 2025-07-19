@@ -57,18 +57,16 @@ export interface Job {
   company: string;
   location: string;
   salary: string;
+  experience: string;
   type: "Full-time" | "Part-time" | "Contract" | "Internship";
   portal: string;
-  portalUrl: string;
   description: string;
   requirements: string[];
   benefits: string[];
   postedDate: string;
-  companyInfo: {
-    size: string;
-    industry: string;
-    founded: string;
-  };
+  applicationDeadline: string;
+  isRemote: boolean;
+  applicationUrl: string;
 }
 
 export interface JobFilters {
