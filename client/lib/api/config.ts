@@ -6,7 +6,7 @@ const getBaseURL = () => {
       window.location.hostname === "127.0.0.1") &&
     !window.location.href.includes("fly.dev")
   ) {
-    return "http://localhost:5000";
+    return "http://localhost:5000/api";
   }
   // For hosted development environments (like fly.dev), use the netlify functions
   return "/api";
