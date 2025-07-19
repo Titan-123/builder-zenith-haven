@@ -7,7 +7,9 @@ import {
   ApiResponse,
 } from "@shared/api";
 
-const API_BASE = "http://localhost:5000";
+import { API_CONFIG } from "./index";
+
+const API_BASE = API_CONFIG.BASE_URL;
 
 // Common fetch configuration for CORS
 const getFetchConfig = (options: RequestInit = {}): RequestInit => ({
