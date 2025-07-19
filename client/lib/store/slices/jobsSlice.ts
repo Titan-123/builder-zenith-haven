@@ -54,8 +54,10 @@ export const searchJobs = createAsyncThunk(
   ) => {
     try {
       const response = await jobsAPI.searchJobs(filters, pagination);
+      console.log("response===",response)
       return response;
     } catch (error: any) {
+      console.error("Error searching jobs:", error);
       return rejectWithValue(error.message || "Failed to search jobs");
     }
   },

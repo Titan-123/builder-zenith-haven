@@ -2,7 +2,7 @@
 const getBaseURL = () => {
   // Check if we're in development and localhost:5000 is available
   if (import.meta.env.DEV && window.location.hostname === "localhost") {
-    return "http://localhost:5000";
+    return "http://localhost:5001/api";
   }
   // Fall back to relative API paths for production/hosted environments
   return "/api";

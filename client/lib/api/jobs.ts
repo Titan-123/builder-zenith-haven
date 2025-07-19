@@ -49,6 +49,8 @@ class JobsAPI {
       `${API_BASE}/jobs/search?${params.toString()}`,
       getFetchConfig(),
     );
+
+    console.log("response---",response)
     const result: ApiResponse<JobSearchResponse> = await response.json();
 
     if (!response.ok || !result.success) {
