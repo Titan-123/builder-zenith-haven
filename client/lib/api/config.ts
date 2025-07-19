@@ -13,3 +13,8 @@ export const API_CONFIG = {
   TIMEOUT: 30000, // 30 seconds
   MAX_RETRIES: 3,
 };
+
+// Helper to check if we're using local backend
+export const isUsingLocalBackend = () => {
+  return API_CONFIG.BASE_URL.includes("localhost:5000");
+};
