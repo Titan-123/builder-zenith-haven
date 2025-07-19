@@ -83,6 +83,7 @@ export interface JobSearchResponse {
   jobs: Job[];
   total: number;
   page: number;
+  limit: number;
   totalPages: number;
 }
 
