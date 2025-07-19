@@ -23,11 +23,10 @@ export const isUsingLocalBackend = () => {
 };
 
 // Debug logging in development
-if (import.meta.env.DEV) {
-  console.log("🔗 API Configuration:", {
-    baseURL: API_CONFIG.BASE_URL,
-    isLocal: isUsingLocalBackend(),
-    hostname: window.location.hostname,
-    environment: import.meta.env.MODE,
-  });
-}
+console.log("🔗 API Configuration:", {
+  baseURL: API_CONFIG.BASE_URL,
+  isLocal: isUsingLocalBackend(),
+  hostname: window.location.hostname,
+  environment: import.meta.env.MODE,
+  currentURL: window.location.href,
+});
