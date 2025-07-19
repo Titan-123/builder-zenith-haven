@@ -7,7 +7,7 @@ import {
   ApiResponse,
 } from "@shared/api";
 
-const API_BASE = "/api";
+const API_BASE = "http://localhost:5000";
 
 class AuthAPI {
   async register(data: RegisterRequest): Promise<AuthResponse> {

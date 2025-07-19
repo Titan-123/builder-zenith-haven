@@ -6,7 +6,7 @@ import {
 } from "@shared/api";
 import { authAPI } from "./auth";
 
-const API_BASE = "/api";
+const API_BASE = "http://localhost:5000";
 
 class ProfileAPI {
   private getAuthHeaders(): Record<string, string> {

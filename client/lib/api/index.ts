@@ -9,7 +9,7 @@ export * from "@shared/api";
 
 // API configuration
 export const API_CONFIG = {
-  BASE_URL: "/api",
+  BASE_URL: "http://localhost:5000",
   TIMEOUT: 30000, // 30 seconds
   MAX_RETRIES: 3,
 };
