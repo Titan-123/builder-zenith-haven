@@ -34,8 +34,10 @@ export const registerUser = createAsyncThunk(
   async (userData: RegisterRequest, { rejectWithValue }) => {
     try {
       const response = await authAPI.register(userData);
+      console.log(response)
       return response;
     } catch (error: any) {
+      console.log(error)
       return rejectWithValue(error.message || "Registration failed");
     }
   },

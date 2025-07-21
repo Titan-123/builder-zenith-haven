@@ -96,6 +96,7 @@ export default function Register() {
       navigate("/dashboard");
     } catch (error) {
       // Error handled by useEffect
+      console.log(error)
     }
   };
 

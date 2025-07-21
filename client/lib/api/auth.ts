@@ -32,18 +32,20 @@ class AuthAPI {
       }),
     );
 
-    const result: ApiResponse<AuthResponse> = await response.json();
+    const result= await response.json();
+    console.log(response.ok)
+    console.log(result)
 
-    if (!response.ok || !result.success) {
+    if (!response.ok ) {
       throw new Error(result.message || "Registration failed");
     }
 
     // Store token in localStorage
-    if (result.data?.token) {
-      localStorage.setItem("auth_token", result.data.token);
+    if (result.token) {
+      localStorage.setItem("auth_token", result.token);
     }
 
-    return result.data!;
+    return result as AuthResponse;
   }
 
   async login(data: LoginRequest): Promise<AuthResponse> {
@@ -55,18 +57,18 @@ class AuthAPI {
       }),
     );
 
-    const result: ApiResponse<AuthResponse> = await response.json();
+    const result = await response.json();
 
-    if (!response.ok || !result.success) {
+    if (!response.ok ) {
       throw new Error(result.message || "Login failed");
     }
 
     // Store token in localStorage
-    if (result.data?.token) {
-      localStorage.setItem("auth_token", result.data.token);
+    if (result.token) {
+      localStorage.setItem("auth_token", result.token);
     }
 
-    return result.data!;
+    return result;
   }
 
   async googleLogin(token: string): Promise<AuthResponse> {

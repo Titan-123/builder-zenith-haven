@@ -52,8 +52,10 @@ class JobsAPI {
         `${API_BASE}/jobs/search?${params.toString()}`,
         getFetchConfig(),
       );
-      const result: ApiResponse<JobSearchResponse> = await response.json();
 
+      console.log("response-----",response)
+      const result: ApiResponse<JobSearchResponse> = await response.json();
+console.log("result-----",result)
       if (!response.ok || !result.success) {
         throw new Error(result.message || "Failed to search jobs");
       }
@@ -62,69 +64,69 @@ class JobsAPI {
     } catch (error) {
       // Fallback to mock data when backend is unavailable
       console.warn("Backend unavailable, using mock data:", error);
-      return this.getMockJobSearchResponse(filters, pagination);
+      // return this.getMockJobSearchResponse(filters, pagination);
     }
   }
 
-  private getMockJobSearchResponse(
-    filters: JobFilters,
-    pagination: PaginationParams,
-  ): JobSearchResponse {
-    const mockJobs: Job[] = [
-      {
-        id: "1",
-        title: "Frontend Developer",
-        company: "TechCorp",
-        location: "San Francisco, CA",
-        salary: "$80,000 - $120,000",
-        experience: "2-5 years",
-        type: "Full-time",
-        description: "We are looking for a skilled Frontend Developer...",
-        requirements: ["React", "TypeScript", "CSS"],
-        benefits: ["Health Insurance", "Remote Work"],
-        portal: "Company Website",
-        postedDate: "2024-01-15",
-        applicationDeadline: "2024-02-15",
-        isRemote: false,
-        applicationUrl: "https://example.com/apply",
-      },
-      {
-        id: "2",
-        title: "Full Stack Developer",
-        company: "StartupXYZ",
-        location: "New York, NY",
-        salary: "$90,000 - $140,000",
-        experience: "3-7 years",
-        type: "Full-time",
-        description: "Join our growing team as a Full Stack Developer...",
-        requirements: ["React", "Node.js", "PostgreSQL"],
-        benefits: ["Health Insurance", "Stock Options"],
-        portal: "LinkedIn",
-        postedDate: "2024-01-14",
-        applicationDeadline: "2024-02-14",
-        isRemote: true,
-        applicationUrl: "https://example.com/apply",
-      },
-    ];
+  // private getMockJobSearchResponse(
+  //   filters: JobFilters,
+  //   pagination: PaginationParams,
+  // ): JobSearchResponse {
+  //   const mockJobs: Job[] = [
+  //     {
+  //       id: "1",
+  //       title: "Frontend Developer",
+  //       company: "TechCorp",
+  //       location: "San Francisco, CA",
+  //       salary: "$80,000 - $120,000",
+  //       experience: "2-5 years",
+  //       type: "Full-time",
+  //       description: "We are looking for a skilled Frontend Developer...",
+  //       requirements: ["React", "TypeScript", "CSS"],
+  //       benefits: ["Health Insurance", "Remote Work"],
+  //       portal: "Company Website",
+  //       postedDate: "2024-01-15",
+  //       applicationDeadline: "2024-02-15",
+  //       isRemote: false,
+  //       applicationUrl: "https://example.com/apply",
+  //     },
+  //     {
+  //       id: "2",
+  //       title: "Full Stack Developer",
+  //       company: "StartupXYZ",
+  //       location: "New York, NY",
+  //       salary: "$90,000 - $140,000",
+  //       experience: "3-7 years",
+  //       type: "Full-time",
+  //       description: "Join our growing team as a Full Stack Developer...",
+  //       requirements: ["React", "Node.js", "PostgreSQL"],
+  //       benefits: ["Health Insurance", "Stock Options"],
+  //       portal: "LinkedIn",
+  //       postedDate: "2024-01-14",
+  //       applicationDeadline: "2024-02-14",
+  //       isRemote: true,
+  //       applicationUrl: "https://example.com/apply",
+  //     },
+  //   ];
 
-    // Apply basic filtering
-    let filteredJobs = mockJobs;
-    if (filters.search) {
-      filteredJobs = filteredJobs.filter(
-        (job) =>
-          job.title.toLowerCase().includes(filters.search!.toLowerCase()) ||
-          job.company.toLowerCase().includes(filters.search!.toLowerCase()),
-      );
-    }
+  //   // Apply basic filtering
+  //   let filteredJobs = mockJobs;
+  //   if (filters.search) {
+  //     filteredJobs = filteredJobs.filter(
+  //       (job) =>
+  //         job.title.toLowerCase().includes(filters.search!.toLowerCase()) ||
+  //         job.company.toLowerCase().includes(filters.search!.toLowerCase()),
+  //     );
+  //   }
 
-    return {
-      jobs: filteredJobs,
-      total: filteredJobs.length,
-      page: pagination.page || 1,
-      limit: pagination.limit || 10,
-      totalPages: Math.ceil(filteredJobs.length / (pagination.limit || 10)),
-    };
-  }
+  //   return {
+  //     jobs: filteredJobs,
+  //     total: filteredJobs.length,
+  //     page: pagination.page || 1,
+  //     limit: pagination.limit || 10,
+  //     totalPages: Math.ceil(filteredJobs.length / (pagination.limit || 10)),
+  //   };
+  // }
 
   async getJobById(id: string): Promise<Job> {
     const response = await fetch(`${API_BASE}/jobs/${id}`);

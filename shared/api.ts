@@ -51,23 +51,57 @@ export interface ChangePasswordRequest {
 // JOB TYPES
 // ============================================================================
 
+// export interface Job {
+//   _id: string;
+//   title: string;
+//   company: string;
+//   location: string;
+//   salary: string;
+//   experience: string;
+//   type: "Full-time" | "Part-time" | "Contract" | "Internship";
+//   portal: string;
+//   description: string;
+//   requirements: string[];
+//   benefits: string[];
+//   postedDate: string;
+//   applicationDeadline: string;
+//   isRemote: boolean;
+//   applicationUrl: string;
+// }
+
+
 export interface Job {
-  id: string;
+  _id: string;
   title: string;
   company: string;
-  location: string;
-  salary: string;
-  experience: string;
-  type: "Full-time" | "Part-time" | "Contract" | "Internship";
+  location: {
+    raw: string;
+    locations: string[];
+  };
+  salary: {
+    min: number | null;
+    max: number | null;
+    raw: string | null;
+  };
+  experience: {
+    min: number | null;
+    max: number | null;
+    raw: string | null;
+  };
+  type?: "Full-time" | "Part-time" | "Contract" | "Internship";
   portal: string;
-  description: string;
-  requirements: string[];
-  benefits: string[];
-  postedDate: string;
-  applicationDeadline: string;
-  isRemote: boolean;
-  applicationUrl: string;
+  description?: string;
+  requirements?: string[];
+  benefits?: string[];
+  postedDate?: string;
+  applicationDeadline?: string;
+  isRemote?: boolean;
+  applicationUrl?: string;
+  link: string; // ✅ You use this in DB
+  datePosted: string;
+  datePostedISO: string;
 }
+
 
 export interface JobFilters {
   role?: string;

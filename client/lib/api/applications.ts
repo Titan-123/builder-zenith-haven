@@ -27,9 +27,11 @@ class ApplicationsAPI {
 
     const result: ApiResponse<ApplicationsResponse> = await response.json();
 
-    if (!response.ok || !result.success) {
+    if (!response.ok ) {
       throw new Error(result.message || "Failed to get applications");
     }
+
+    console.log(result);
 
     return result.data!;
   }
